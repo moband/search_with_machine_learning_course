@@ -22,16 +22,28 @@ def process_filters(filters_input):
     for filter in filters_input:
         type = request.args.get(filter + ".type")
         display_name = request.args.get(filter + ".displayName", filter)
+        key = request.args.get(filter + ".key")
         #
         # We need to capture and return what filters are already applied so they can be automatically added to any existing links we display in aggregations.jinja2
         applied_filters += "&filter.name={}&{}.type={}&{}.displayName={}".format(filter, filter, type, filter,
                                                                                  display_name)
+        display_filters.append(display_name)
+                                                                             
         #TODO: IMPLEMENT AND SET filters, display_filters and applied_filters.
         # filters get used in create_query below.  display_filters gets used by display_filters.jinja2 and applied_filters gets used by aggregations.jinja2 (and any other links that would execute a search.)
         if type == "range":
-            pass
+            range_from = request.args.get(filter + ".from")
+            range_to = request.args.get(filter + ".to")
+            applied_filters+="&{}.key={}&{}.from={}&{}.to={}".format(filter,key,filter,range_from,filter,range_to)
+            range_filter={"range": { "regularPrice": { "gte": range_from } }}
+            if range_to:
+                range_filter['range']['regularPrice']['lt'] = range_to
+            filters+=[range_filter]
+            
         elif type == "terms":
-            pass #TODO: IMPLEMENT
+            applied_filters+="&{}.key={}".format(filter,key)
+            filters += [{"term": { "department": key }}]
+
     print("Filters: {}".format(filters))
 
     return filters, display_filters, applied_filters
@@ -47,7 +59,7 @@ def query():
     query_obj = None
     display_filters = None
     applied_filters = ""
-    filters = None
+    filters = []
     sort = "_score"
     sortDir = "desc"
     if request.method == 'POST':  # a query has been submitted
@@ -74,10 +86,11 @@ def query():
         query_obj = create_query("*", [], sort, sortDir)
 
     print("query obj: {}".format(query_obj))
-    response = None   # TODO: Replace me with an appropriate call to OpenSearch
+    response = opensearch.search(query_obj)   # TODO: Replace me with an appropriate call to OpenSearch
+    
     # Postprocess results here if you so desire
 
-    #print(response)
+    # print(response)
     if error is None:
         return render_template("search_results.jinja2", query=user_query, search_response=response,
                                display_filters=display_filters, applied_filters=applied_filters,
@@ -88,13 +101,93 @@ def query():
 
 def create_query(user_query, filters, sort="_score", sortDir="desc"):
     print("Query: {} Filters: {} Sort: {}".format(user_query, filters, sort))
+
+    fscore_query = {
+                "function_score": {
+                    "boost_mode": "multiply",
+                    "functions": [
+                    {
+                        "field_value_factor": {
+                        "factor": 3,
+                        "field": "bestSellingRank",
+                        "missing": 10000000,
+                        "modifier": "reciprocal"
+                        }
+                    },
+                    
+                    {
+                        "field_value_factor": {
+                        "factor": 3.5,
+                        "field": "customerReviewCount",
+                        "missing": 1,
+                        "modifier": "square"
+                        }
+                    }
+                    ],
+                    "query": {
+                    "multi_match": {
+                        "fields": [
+                        "name^1000",
+                        "shortDescription^10",
+                        "longDescription^1"
+                        ],
+                        "query": user_query,
+                        "type": "cross_fields"
+                    }
+                    },
+                    "score_mode": "multiply"
+                }
+        }
+    bool_query =  {"bool": {"must": [ fscore_query ],'filter':filters}}
+    aggs = {
+                "departments": {
+                    "terms": {
+                    "field": "department",
+                    "missing": "N/A"
+                    }
+                },
+                "missing_images": {
+                    "missing": {
+                    "field": "image"
+                    }
+                },
+                "regularPrice": {
+                    "range": {
+                    "field": "regularPrice",
+                    "ranges": [
+                        {
+                        "from": 0,
+                        "key": "$",
+                        "to": 100
+                        },
+                        {
+                        "from": 100,
+                        "key": "$$",
+                        "to": 200
+                        },
+                        {
+                        "from": 200,
+                        "key": "$$$",
+                        "to": 300
+                        },
+                        {
+                        "from": 300,
+                        "key": "$$$$",
+                        "to": 400
+                        },
+                        {
+                        "from": 500,
+                        "key": "$$$$$"
+                        }
+                    ]}
+                }
+            }
+   
     query_obj = {
         'size': 10,
-        "query": {
-            "match_all": {} # Replace me with a query that both searches and filters
-        },
-        "aggs": {
-            #TODO: FILL ME IN
-        }
+        "query": bool_query,
+        "aggs": aggs
     }
+
+    
     return query_obj

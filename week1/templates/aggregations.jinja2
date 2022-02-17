@@ -22,6 +22,27 @@
   </div>
   {#Add in Department aggregation display here #}
   <div class="aggregations-result">
+      <div class="agg-header">Departments</div>
+      {% if "filter.name=departments" not in applied_filters %}
+        {% for dep in search_response.aggregations.departments.buckets %}
+          {% if dep.doc_count > 0 %}
+            <div class="aggregation">
+              <div><a
+                  href="{{ url_for("search.query") }}?&query={{ query|e }}{{ applied_filters }}&filter.name=departments&departments.type=terms&departments.key={{ dep.key }}&departments.displayName=Departments">{{ dep.key }}: {{ dep.doc_count }}</a>
+              </div>
+            </div>{% endif %}
+        {% endfor %}
+      {% else %}
+        {% for agg in search_response.aggregations.departments.buckets %}
+          {% if agg.doc_count > 0 %}
+            <div class="aggregation">
+              <div>{{ agg.key }}: {{ agg.doc_count }}</div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+  </div >
+  <div class="aggregations-result">
     <div class="agg-header">Missing Data</div>
     <div>image: {{ search_response.aggregations.missing_images.doc_count }}</div>
   </div>{% endif %}
