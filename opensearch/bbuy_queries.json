@@ -1,6 +1,6 @@
 {
   "settings": {
-    "index.refresh_interval": "5s"
+    "index.refresh_interval": "30s"
   },
   "mappings" : {
     "properties" : {
@@ -22,7 +22,7 @@
       },
       "click_time" : {
         "type": "date",
-        "format": "yyyy-MM-dd HH:mm:ss.SSS"
+        "format": "yyyy-MM-dd HH:mm:ss.[SSS][SS][S][Z]"
       },
       "query" : {
         "type" : "text",
@@ -35,7 +35,7 @@
       },
       "query_time" : {
         "type": "date",
-        "format": "yyyy-MM-dd HH:mm:ss.SSS"
+        "format": "yyyy-MM-dd[T]HH:mm:ss.[SSS][SS][S][Z]"
       },
       "sku" : {
         "type" : "keyword"

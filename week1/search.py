@@ -42,7 +42,7 @@ def process_filters(filters_input):
             
         elif type == "terms":
             applied_filters+="&{}.key={}".format(filter,key)
-            filters += [{"term": { "department": key }}]
+            filters += [{"term": { "department.keyword": key }}]
 
     print("Filters: {}".format(filters))
 
@@ -104,11 +104,11 @@ def create_query(user_query, filters, sort="_score", sortDir="desc"):
 
     fscore_query = {
                 "function_score": {
-                    "boost_mode": "multiply",
+                    "boost_mode": "avg",
                     "functions": [
                     {
                         "field_value_factor": {
-                        "factor": 3,
+                        "factor": 1.5,
                         "field": "bestSellingRank",
                         "missing": 10000000,
                         "modifier": "reciprocal"
@@ -117,7 +117,7 @@ def create_query(user_query, filters, sort="_score", sortDir="desc"):
                     
                     {
                         "field_value_factor": {
-                        "factor": 3.5,
+                        "factor": 2,
                         "field": "customerReviewCount",
                         "missing": 1,
                         "modifier": "square"
@@ -126,23 +126,24 @@ def create_query(user_query, filters, sort="_score", sortDir="desc"):
                     ],
                     "query": {
                     "multi_match": {
+                        "operator": "AND",
                         "fields": [
                         "name^1000",
-                        "shortDescription^10",
+                        "shortDescription^50",
                         "longDescription^1"
                         ],
                         "query": user_query,
                         "type": "cross_fields"
                     }
                     },
-                    "score_mode": "multiply"
+                    "score_mode": "sum"
                 }
         }
     bool_query =  {"bool": {"must": [ fscore_query ],'filter':filters}}
     aggs = {
                 "departments": {
                     "terms": {
-                    "field": "department",
+                    "field": "department.keyword",
                     "missing": "N/A"
                     }
                 },
@@ -185,6 +186,7 @@ def create_query(user_query, filters, sort="_score", sortDir="desc"):
    
     query_obj = {
         'size': 10,
+        'sort': { sort : sortDir },
         "query": bool_query,
         "aggs": aggs
     }
