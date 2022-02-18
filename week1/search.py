@@ -86,10 +86,11 @@ def query():
         query_obj = create_query("*", [], sort, sortDir)
 
 
-    response = opensearch.search(query_obj, index = 'bbuy_products')  
-
+    response = opensearch.search(query_obj, index = 'bbuy_products')
+    
     # Postprocess results here if you so desire
 
+    
     if error is None:
         return render_template("search_results.jinja2", query=user_query, search_response=response,
                                display_filters=display_filters, applied_filters=applied_filters,
@@ -101,6 +102,7 @@ def query():
 def create_query(user_query, filters, sort="_score", sortDir="desc"):
     print("Query: {} Filters: {} Sort: {}".format(user_query, filters, sort))
     
+
     es_query = build_es_query(user_query, filters)
 
     aggs = get_aggregations()
@@ -193,7 +195,7 @@ def get_fscore_query(main_query):
             }
 
 def get_bool_query(user_query, filters):
-    baseline_query = match_all_query() if user_query == 0 else get_baseline_query(user_query)
+    baseline_query = match_all_query() if user_query == '*' else get_baseline_query(user_query)
     
     name_sayt_query = get_name_sayt_query(user_query)
     return {
