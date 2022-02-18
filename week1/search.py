@@ -29,7 +29,6 @@ def process_filters(filters_input):
                                                                                  display_name)
         display_filters.append(display_name)
                                                                              
-        #TODO: IMPLEMENT AND SET filters, display_filters and applied_filters.
         # filters get used in create_query below.  display_filters gets used by display_filters.jinja2 and applied_filters gets used by aggregations.jinja2 (and any other links that would execute a search.)
         if type == "range":
             range_from = request.args.get(filter + ".from")
@@ -82,15 +81,15 @@ def query():
             (filters, display_filters, applied_filters) = process_filters(filters_input)
 
         query_obj = create_query(user_query, filters, sort, sortDir)
+        
     else:
         query_obj = create_query("*", [], sort, sortDir)
 
-    print("query obj: {}".format(query_obj))
-    response = opensearch.search(query_obj)   # TODO: Replace me with an appropriate call to OpenSearch
-    
+
+    response = opensearch.search(query_obj, index = 'bbuy_products')  
+
     # Postprocess results here if you so desire
 
-    # print(response)
     if error is None:
         return render_template("search_results.jinja2", query=user_query, search_response=response,
                                display_filters=display_filters, applied_filters=applied_filters,
@@ -101,46 +100,112 @@ def query():
 
 def create_query(user_query, filters, sort="_score", sortDir="desc"):
     print("Query: {} Filters: {} Sort: {}".format(user_query, filters, sort))
+    
+    es_query = build_es_query(user_query, filters)
 
-    fscore_query = {
+    aggs = get_aggregations()
+   
+    query_obj = {
+        'size': 10,
+        'sort': { sort : sortDir },
+        "query": es_query,
+        "aggs": aggs
+    }
+
+    return query_obj
+
+def build_es_query(user_query,filters):
+    main_query = get_bool_query(user_query,filters)
+    return get_fscore_query(main_query)
+
+
+def get_name_sayt_query(user_query):
+     return {  "multi_match": 
+                {
+                    "query": user_query,
+                    "type": "bool_prefix",
+                    "fields": ["name.sayt",
+                                "name.sayt._2gram",
+                                "name.sayt._3gram"],
+                    "boost": 3
+                }
+        }
+
+def get_baseline_query(user_query):
+    return {
+        "multi_match": {
+            "operator": "AND",
+            "fields": [
+            "name^3",
+            "shortDescription^2",
+            "longDescription",
+            'departement'
+            ],
+            "query": user_query,
+            "type": "cross_fields"
+        }
+    }
+def match_all_query():
+    return {
+        'match_all':{}
+    }
+
+def get_fscore_query(main_query):
+    return {
                 "function_score": {
-                    "boost_mode": "avg",
-                    "functions": [
+                    "boost_mode": "multiply",
+                    "functions": [   
                     {
                         "field_value_factor": {
-                        "factor": 1.5,
-                        "field": "bestSellingRank",
+                        "factor": 4,
+                        "field": "salesRankShortTerm",
                         "missing": 10000000,
                         "modifier": "reciprocal"
                         }
                     },
-                    
                     {
                         "field_value_factor": {
-                        "factor": 2,
+                        "factor": 3,
+                        "field": "salesRankLongTerm",
+                        "missing": 10000000,
+                        "modifier": "reciprocal"
+                        }
+                    },
+                    {
+                        "field_value_factor": {
+                        "factor": 3,
+                        "field": "customerReviewAverage",
+                        "missing": 0
+                        }
+                    },
+                    {
+                        "field_value_factor": {
+                        "factor": 6,
                         "field": "customerReviewCount",
                         "missing": 1,
                         "modifier": "square"
                         }
                     }
                     ],
-                    "query": {
-                    "multi_match": {
-                        "operator": "AND",
-                        "fields": [
-                        "name^1000",
-                        "shortDescription^50",
-                        "longDescription^1"
-                        ],
-                        "query": user_query,
-                        "type": "cross_fields"
-                    }
-                    },
+                    "query": main_query,
                     "score_mode": "sum"
                 }
-        }
-    bool_query =  {"bool": {"must": [ fscore_query ],'filter':filters}}
-    aggs = {
+            }
+
+def get_bool_query(user_query, filters):
+    baseline_query = match_all_query() if user_query == 0 else get_baseline_query(user_query)
+    
+    name_sayt_query = get_name_sayt_query(user_query)
+    return {
+                "bool": {
+                            "must": [ baseline_query ],
+                            'should': [ name_sayt_query ],
+                            'filter': filters
+                        }
+            }
+
+def get_aggregations():
+    return {
                 "departments": {
                     "terms": {
                     "field": "department.keyword",
@@ -183,13 +248,3 @@ def create_query(user_query, filters, sort="_score", sortDir="desc"):
                     ]}
                 }
             }
-   
-    query_obj = {
-        'size': 10,
-        'sort': { sort : sortDir },
-        "query": bool_query,
-        "aggs": aggs
-    }
-
-    
-    return query_obj

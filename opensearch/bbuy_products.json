@@ -195,7 +195,10 @@
                 "keyword": {
                     "type": "keyword",
                     "ignore_above": 256
-                }                
+                },
+                "sayt": {
+                    "type": "search_as_you_type"
+                  }                
             }
         },
         "onSale": {
