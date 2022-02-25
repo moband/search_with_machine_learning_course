@@ -1,7 +1,6 @@
 {
   "featureset": {
     "features": [
-
       {
         "name": "click_prior",
         "template_language": "mustache",
@@ -48,7 +47,6 @@
                   "missing": 1000000
                 }
               }
-
             ],
             "query": {
               "match_all": {}
@@ -94,6 +92,70 @@
           }
         }
       },
+      
+      {
+        "name": "customerReviewAverage",
+        "template_language": "mustache",
+        "template": {
+          "function_score": {
+            "functions": [
+              {
+                "field_value_factor": {
+                  "field": "customerReviewAverage",
+                  "missing": 3
+                }
+              }
+
+            ],
+            "query": {
+              "match_all": {}
+            }
+          }
+        }
+      },
+      {
+        "name": "shortDescription",
+        "params": [
+          "keywords"
+        ],
+        "template_language": "mustache",
+        "template": {
+          "match": {
+            "shortDescription": "{{keywords}}"
+          }
+        }
+      },
+      {
+        "name": "longDescription",
+        "params": [
+          "keywords"
+        ],
+        "template_language": "mustache",
+        "template": {
+          "match": {
+            "longDescription": "{{keywords}}"
+          }
+        }
+      },
+      {
+        "name": "customerReviewCount",
+        "template_language": "mustache",
+        "template": {
+          "function_score": {
+            "functions": [
+              {
+                "field_value_factor": {
+                  "field": "customerReviewCount",
+                  "missing": 0
+                }
+              }
+            ],
+            "query": {
+              "match_all": {}
+            }
+          }
+        }
+      },
       {
         "name": "salePrice",
         "template_language": "mustache",
@@ -109,6 +171,21 @@
             ],
             "query": {
               "match_all": {}
+            }
+          }
+        }
+      },
+      {
+        "name": "name_fuzziness",
+        "params": [
+          "keywords"
+        ],
+        "template_language": "mustache",
+        "template": {
+          "match": {
+            "name": {
+              "query": "{{keywords}}",
+              "fuzziness": "AUTO"
             }
           }
         }
