@@ -4,6 +4,17 @@ import xml.etree.ElementTree as ET
 import argparse
 from pathlib import Path
 
+import re
+import string
+import unicodedata
+
+def normalize_accented_chars(text):
+    return unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8', 'ignore')
+
+def remove_punctuation(text):
+    return str(text).translate(str.maketrans(string.punctuation, ' '*len(string.punctuation)))
+
+
 directory = r'/workspace/search_with_machine_learning_course/week3/pruned_products'
 parser = argparse.ArgumentParser(description='Process some integers.')
 general = parser.add_argument_group("general")
@@ -26,9 +37,14 @@ if args.input:
 sample_rate = args.sample_rate
 
 def transform_training_data(name):
-    # IMPLEMENT
-    return name.replace('\n', ' ')
+    name = name.lower().strip()
+    name = re.sub(r'[\r|\n|\r\n]+', ' ',name)
+    name = remove_punctuation(name)
+    name = normalize_accented_chars(name)
+    name = re.sub(' +', ' ', name)
 
+    return name
+    
 # Directory for product data
 
 print("Writing results to %s" % output_file)

@@ -29,7 +29,7 @@ def normalize_accented_chars(text):
     return unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8', 'ignore')
 
 def remove_punctuation(text):
-    return str(text).translate(str.maketrans('', '', string.punctuation))
+   return str(text).translate(str.maketrans(string.punctuation, ' '*len(string.punctuation)))
 
 def transform_name(product_name):
     product_name = product_name.lower().strip()
