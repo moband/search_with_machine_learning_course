@@ -37,8 +37,8 @@ To assess your project work, you should be able to answer the following question
 	+ with `--min_products 100` I got :  **0.812**
 	+ with `--min_products 200` I got :  **0.887**
 
--** How did you prune the category tree, and how did that affect your precision?**
-+ I just added a new switch called `--cat_granularity_level` which basically recieves the number of backward steps from the leaf depth to select the right leaf ancestor and use it as a category label. here is the detail of my experiments on pruning at different level
+- ** How did you prune the category tree, and how did that affect your precision?**
++ I just added a new switch called `--cat_granularity_level` which basically recieves the number of backward steps from the leaf depth to select the right leaf ancestor and use it as a category label. here is the detail of my experiments on pruning at different levels
 +  --min_products 100 --cat_granularity_level 1
 	+ 215 infrequent labels eliminated from dataset. 
 	+ `N       10000  P@1     0.784  R@1     0.784`
