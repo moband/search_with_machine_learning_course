@@ -617,3 +617,19 @@ but then I used fasttext **autotune** feature to get the best model.
 		dsl 0.629025
 
 		router 0.623429
+
+
+### 3. For integrating synonyms with search:
+ 
+
++  **a. How did you transform the product names (if different than previously)?**
+
++ the same as before but without stemming
+
++  **b.  What threshold score did you use?**
+
++  0.9
+
++  **c.  Were you able to find the additional results by matching synonyms?**
+
++  yes, I will share the results in the slack channel
