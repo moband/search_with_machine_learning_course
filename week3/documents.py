@@ -7,6 +7,7 @@ from flask import (
 )
 import fasttext
 import json
+import nltk
 
 bp = Blueprint('documents', __name__, url_prefix='/documents')
 
@@ -23,7 +24,15 @@ def annotate():
         for item in the_doc:
             if item != "sku":
                 the_text = the_doc[item]
-                print("IMPLEMENT ME: annotate()")
+
+                
+                if syns_model and (item == 'name'):
+                    name_synonyms = []
+                    tokens = nltk.word_tokenize(the_text)
+                    for token in tokens:
+                        syns = syns_model.get_nearest_neighbors(token.strip().lower())
+                        name_synonyms += [ syn for score, syn in syns if score > 0.9 ]
+                    response['name_synonyms'] = list(set(name_synonyms))
 
         print(json.dumps(response, indent=2))
 
