@@ -16,7 +16,7 @@
       2. with --min_queries **100**
          1. **P@1** = `0.523`,
          2. **P@3** = `0.235`  , **R@3** = `0.706`
-         3. **P@5** = `0.235`  , **R@5** = `0.706`
+         3. **P@5** = `0.153`  , **R@5** = `0.766`
 3. For integrating query classification with search:
    1. Give 2 or 3 examples of queries where you saw a dramatic positive change in the results because of filtering. Make sure to include the classifier output for those queries.
       1. iphone 4 -> `pcmcat209400050001`
