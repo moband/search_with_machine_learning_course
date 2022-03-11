@@ -1,4 +1,16 @@
 import math
+
+def add_filter(query_obj, query_categories):
+    print(query_obj)
+    query_obj["query"]["bool"]["filter"] = [{
+        "terms": {
+            "categoryPathIds.keyword": query_categories
+        }
+    }]
+
+    return query_obj
+    
+
 # some helpful tools for dealing with queries
 def create_stats_query(aggs, extended=True):
     print("Creating stats query from %s" % aggs)

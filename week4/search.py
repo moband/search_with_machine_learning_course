@@ -10,6 +10,15 @@ from week4.opensearch import get_opensearch
 import week4.utilities.query_utils as qu
 import week4.utilities.ltr_utils as lu
 
+from cleantext import clean
+import nltk
+
+stemmer = nltk.stem.PorterStemmer()
+
+def clean_text(q):
+    q = clean(q, lower=True,no_punct=True, no_line_breaks=True, no_numbers=True,no_currency_symbols=True)
+    return " ".join([stemmer.stem(token) for token in q.split()])
+
 bp = Blueprint('search', __name__, url_prefix='/search')
 
 
@@ -57,8 +66,13 @@ def process_filters(filters_input):
     return filters, display_filters, applied_filters
 
 def get_query_category(user_query, query_class_model):
-    print("IMPLEMENT ME: get_query_category")
-    return None
+    categories=[]
+
+    user_query = clean_text(user_query)
+    predicted_cats,confidences = query_class_model.predict(user_query, 5)
+    categories += [ cat.replace('__label__','') for cat, confidence in zip(predicted_cats,confidences) if confidence > 0.5 ]
+
+    return categories
 
 
 @bp.route('/query', methods=['GET', 'POST'])
@@ -137,8 +151,11 @@ def query():
 
     query_class_model = current_app.config["query_model"]
     query_category = get_query_category(user_query, query_class_model)
-    if query_category is not None:
-        print("IMPLEMENT ME: add this into the filters object so that it gets applied at search time.  This should look like your `term` filter from week 1 for department but for categories instead")
+
+    # if query_category and user_query!="*":
+    #     print(query_category)
+    #     qu.add_filter(query_obj, query_category)
+
     #print("query obj: {}".format(query_obj))
     response = opensearch.search(body=query_obj, index=current_app.config["index_name"], explain=explain)
     # Postprocess results here if you so desire
