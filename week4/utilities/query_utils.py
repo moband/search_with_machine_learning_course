@@ -1,7 +1,7 @@
 import math
 
 def add_filter(query_obj, query_categories):
-    print(query_obj)
+
     query_obj["query"]["bool"]["filter"] = [{
         "terms": {
             "categoryPathIds.keyword": query_categories

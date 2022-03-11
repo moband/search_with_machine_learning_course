@@ -71,7 +71,7 @@ def get_query_category(user_query, query_class_model):
     user_query = clean_text(user_query)
     predicted_cats,confidences = query_class_model.predict(user_query, 5)
     categories += [ cat.replace('__label__','') for cat, confidence in zip(predicted_cats,confidences) if confidence > 0.5 ]
-
+    
     return categories
 
 
@@ -152,9 +152,9 @@ def query():
     query_class_model = current_app.config["query_model"]
     query_category = get_query_category(user_query, query_class_model)
 
-    # if query_category and user_query!="*":
-    #     print(query_category)
-    #     qu.add_filter(query_obj, query_category)
+    if query_category and user_query!="*":
+        
+        qu.add_filter(query_obj, query_category)
 
     #print("query obj: {}".format(query_obj))
     response = opensearch.search(body=query_obj, index=current_app.config["index_name"], explain=explain)
