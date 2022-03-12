@@ -9,6 +9,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 import argparse
 import json
 import os
+import warnings
 from getpass import getpass
 from urllib.parse import urljoin
 
@@ -21,7 +22,7 @@ import xgb_utils as xgbu
 from opensearchpy import OpenSearch
 
 
-
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 if __name__ == "__main__":
     host = 'localhost'
@@ -100,9 +101,9 @@ if __name__ == "__main__":
                            help="File under --output_dir to write the differences between baseline and LTR search")
     xgb_group.add_argument("--xgb_test_num_queries", default=100, type=int,
                            help="Of the test data, only run this many queries when testing.")
-    xgb_group.add_argument("--xgb_main_query_weight", default=1, type=float,
+    xgb_group.add_argument("--xgb_main_query_weight", default=0, type=float,
                            help="For the rescore query, how much weight to give the main query.")
-    xgb_group.add_argument("--xgb_rescore_query_weight", default=2, type=float,
+    xgb_group.add_argument("--xgb_rescore_query_weight", default=1, type=float,
                            help="For the rescore query, how much weight to give the rescore query.")
 
     analyze_group = parser.add_argument_group("Analyze Test Results")
